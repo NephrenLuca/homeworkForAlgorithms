@@ -5,16 +5,16 @@ using namespace std;
 typedef unsigned long long hashValueType;
 
 const unsigned int X = 131;
-const unsigned int maxn = 19260817;
+const unsigned int maxn = 1000;
 
-char ref[maxn], query[maxn], refReverse[maxn];
+char refStr[maxn], query[maxn], refReverse[maxn];
 int refLen, queryLen;
 
 hashValueType refHash[maxn], refReverseHash[maxn], queryHash[maxn], powX[maxn];
 
 int dp[maxn];
 
-FILE* inFile, outFile;
+// FILE* inFile, outFile;
 
 void hashTo(char* str, int st, int end, hashValueType* hval) {
     hashValueType htmp = 0;
@@ -57,17 +57,11 @@ hashValueType getHash(int l, int r, hashValueType* hval) {
 typedef struct substringType {
     int st, len;
     bool isrev;
-    substringType(int s, int l, bool f) {
-        st = s; len = l; isrev = f;
-    }
 } substringType;
 
 typedef struct traceType {
     substringType str;
     int nxt;
-    traceType(substrings s, int n) {
-        str = s; nxt = n;
-    }
 } traceType;
 
 unordered_map<hashValueType, substringType> substrings;
@@ -75,29 +69,30 @@ traceType traces[maxn];
 vector<traceType> ans;
 
 int main() {
-    inFile = fopen("in.txt", "r");
+    // inFile = fopen("in.txt", "r");
     // outFile = fopen("out.txt", "w");
-    fscanf(inFile, "%s", ref); refLen = strlen(ref);
-    fscanf(inFile, "%s" ,query); queryLen = strlen(query);
-    invTo(ref, refReverse, refLen);
+    // fscanf(inFile, "%s", ref); fscanf(inFile, "%s" ,query);
+    scanf("%s", refStr);
+    scanf("%s", query);
+    refLen = strlen(refStr); queryLen = strlen(query);
+    invTo(refStr, refReverse, refLen);
     powX[0] = 1;
     for (int i = 1; i <= maxn; i++) {
         powX[i] = powX[i - 1] * X;
     }
-    hashTo(ref, 0, refLen, refHash);
+    hashTo(refStr, 0, refLen, refHash);
     hashTo(refReverse, 0, refLen, refReverseHash);
     hashTo(query, 0, queryLen, queryHash);
-
     for (int i = 0; i < refLen; i++) {
         for (int j = i; j < refLen; j++) {
             hashValueType currentSubstring = getHash(i, j, refHash);
             hashValueType currentSubstringReversed = getHash(i, j, refReverseHash);
             int currentLen = j - i + 1;
             if (substrings.find(currentSubstring) == substrings.end()) {
-                substrings[currentSubstring] = substringType(i, currentLen, 0);
+                substrings[currentSubstring] = {i, currentLen, 0};
             }
             if (substrings.find(currentSubstringReversed) == substrings.end()) {
-                substrings[currentSubstringReversed] = substringType(i, currentLen, 1);
+                substrings[currentSubstringReversed] = {i, currentLen, 1};
             }
         }
     }
@@ -110,9 +105,9 @@ int main() {
             hashValueType currentHash = getHash(i, j, queryHash);
             if (substrings.find(currentHash) != substrings.end()) {
                 substringType currentSubstring = substrings[currentHash];
-                if (dp[i] < dp[j + 1] + 1 || (dp[i] == dp[j + 1] + 1 && currentSubstring.isrev == 0)) {
+                if (dp[i] > dp[j + 1] + 1 || (dp[i] == dp[j + 1] + 1 && currentSubstring.isrev == 0)) {
                     dp[i] = dp[j + 1] + 1;
-                    traces[i] = traceType(currentSubstring, j + 1);
+                    traces[i] = {currentSubstring, j + 1};
                 }
             }
         }
@@ -124,7 +119,7 @@ int main() {
         pos = traces[pos].nxt;
     }
 
-    for (i = 0; i < ans.size(); i++) {
+    for (int i = 0; i < ans.size(); i++) {
         printf("match! starting pos in ref: %d, starting pos in query: %d, len: %d\n", ans[i].str.st, i == 0 ? 0 : ans[i - 1].nxt, ans[i].str.len);
     }
     return 0;
